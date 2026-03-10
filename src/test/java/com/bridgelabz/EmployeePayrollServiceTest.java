@@ -1,9 +1,24 @@
 package com.bridgelabz;
 
+import java.util.List;
+import java.time.LocalDate;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class EmployeePayrollServiceTest {
+
+    @Test
+    public void givenDateRange_whenRetrieved_shouldReturnEmployees() {
+        EmployeePayrollService service = EmployeePayrollService.getInstance();
+
+        List<EmployeePayrollData> employees = service.getEmployeesByDateRange(
+                LocalDate.of(2018, 1, 1), LocalDate.of(2019, 12, 31));
+
+        assertNotNull(employees);
+        assertTrue(employees.size() > 0);
+        System.out.println("Test Passed! Employees in date range: " + employees.size());
+        employees.forEach(System.out::println);
+    }
 
     @Test
     public void givenSalaryUpdate_whenUpdated_shouldSyncWithDB() {

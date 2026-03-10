@@ -110,16 +110,38 @@ public class EmployeePayrollService {
         return null;
     }
 
+    public List<EmployeePayrollData> getEmployeesByDateRange(LocalDate startDate, LocalDate endDate) {
+        List<EmployeePayrollData> employeePayrollList = new ArrayList<>();
+        String sql = "SELECT * FROM employee_payroll WHERE start BETWEEN ? AND ?";
+
+        try (Connection con = getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+
+            ps.setDate(1, Date.valueOf(startDate));
+            ps.setDate(2, Date.valueOf(endDate));
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                int id = rs.getInt("id");
+                String name = rs.getString("name");
+                double salary = rs.getDouble("salary");
+                LocalDate start = rs.getDate("start").toLocalDate();
+                employeePayrollList.add(new EmployeePayrollData(id, name, salary, start));
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return employeePayrollList;
+    }
+
     public static void main(String[] args) {
         EmployeePayrollService service = EmployeePayrollService.getInstance();
 
-        // UC2 - Retrieve all
-        System.out.println("=== All Employees ===");
-        service.getEmployeePayrollData().forEach(System.out::println);
-
-        // UC4 - Update using PreparedStatement
-        System.out.println("\n=== Updating Terisa's Salary (PreparedStatement) ===");
-        EmployeePayrollData updated = service.updateEmployeeSalaryPrepared("Terisa", 3000000.00);
-        System.out.println("Updated: " + updated);
+        // UC5 - Retrieve by date range
+        System.out.println("\n=== Employees joined between 2018-01-01 and 2019-12-31 ===");
+        List<EmployeePayrollData> empList = service.getEmployeesByDateRange(
+                LocalDate.of(2018, 1, 1), LocalDate.of(2019, 12, 31));
+        empList.forEach(System.out::println);
     }
 }
