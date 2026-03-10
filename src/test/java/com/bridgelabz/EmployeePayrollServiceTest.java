@@ -7,14 +7,12 @@ public class EmployeePayrollServiceTest {
 
     @Test
     public void givenSalaryUpdate_whenUpdated_shouldSyncWithDB() {
-        EmployeePayrollService service = new EmployeePayrollService();
+        EmployeePayrollService service = EmployeePayrollService.getInstance();
 
-        // Update Terisa's salary
-        EmployeePayrollData updated = service.updateEmployeeSalary("Terisa", 3000000.00);
-
-        // Retrieve from DB and compare
+        EmployeePayrollData updated = service.updateEmployeeSalaryPrepared("Terisa", 3000000.00);
         EmployeePayrollData fromDB = service.getEmployeePayrollDataByName("Terisa");
 
+        assertNotNull(fromDB);
         assertEquals(updated.salary, fromDB.salary);
         System.out.println("Test Passed! Salary synced with DB: " + fromDB.salary);
     }

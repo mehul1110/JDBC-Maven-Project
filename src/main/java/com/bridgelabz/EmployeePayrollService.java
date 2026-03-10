@@ -12,10 +12,47 @@ public class EmployeePayrollService {
     private static final String USERNAME = "root";
     private static final String PASSWORD = "123456"; // change this
 
-    public Connection getConnection() throws SQLException {
+    // Singleton instance
+    private static EmployeePayrollService instance;
+
+    // Cached PreparedStatements
+    private PreparedStatement updateSalaryStatement;
+    private PreparedStatement getEmployeeByNameStatement;
+
+    // Private constructor for Singleton
+    private EmployeePayrollService() {
+        try {
+            prepareStatements();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // Singleton getInstance method
+    public static EmployeePayrollService getInstance() {
+        if (instance == null) {
+            instance = new EmployeePayrollService();
+        }
+        return instance;
+    }
+
+    private Connection getConnection() throws SQLException {
         Connection con = DriverManager.getConnection(JDBC_URL, USERNAME, PASSWORD);
         System.out.println("Connection established: " + con);
         return con;
+    }
+
+    // Cache PreparedStatements at program level
+    private void prepareStatements() throws SQLException {
+        Connection con = getConnection();
+
+        updateSalaryStatement = con.prepareStatement(
+                "UPDATE employee_payroll SET salary = ? WHERE name = ?");
+
+        getEmployeeByNameStatement = con.prepareStatement(
+                "SELECT * FROM employee_payroll WHERE name = ?");
+
+        System.out.println("PreparedStatements cached successfully!");
     }
 
     public List<EmployeePayrollData> getEmployeePayrollData() {
@@ -40,30 +77,26 @@ public class EmployeePayrollService {
         return employeePayrollList;
     }
 
-    public EmployeePayrollData updateEmployeeSalary(String name, double salary) {
-        String sql = String.format(
-                "UPDATE employee_payroll SET salary = %.2f WHERE name = '%s'", salary, name);
-
-        try (Connection con = getConnection();
-             Statement stmt = con.createStatement()) {
-
-            int rowsAffected = stmt.executeUpdate(sql);
+    // UC4 - Update using PreparedStatement
+    public EmployeePayrollData updateEmployeeSalaryPrepared(String name, double salary) {
+        try {
+            updateSalaryStatement.setDouble(1, salary);
+            updateSalaryStatement.setString(2, name);
+            int rowsAffected = updateSalaryStatement.executeUpdate();
             if (rowsAffected > 0) {
-                System.out.println("Salary updated successfully for: " + name);
+                System.out.println("Salary updated using PreparedStatement for: " + name);
             }
-
         } catch (SQLException e) {
             e.printStackTrace();
         }
         return getEmployeePayrollDataByName(name);
     }
 
+    // Reusing ResultSet with cached PreparedStatement
     public EmployeePayrollData getEmployeePayrollDataByName(String name) {
-        String sql = "SELECT * FROM employee_payroll WHERE name = '" + name + "'";
-
-        try (Connection con = getConnection();
-             Statement stmt = con.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
+        try {
+            getEmployeeByNameStatement.setString(1, name);
+            ResultSet rs = getEmployeeByNameStatement.executeQuery();
 
             if (rs.next()) {
                 int id = rs.getInt("id");
@@ -71,7 +104,6 @@ public class EmployeePayrollService {
                 LocalDate startDate = rs.getDate("start").toLocalDate();
                 return new EmployeePayrollData(id, name, salary, startDate);
             }
-
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -79,15 +111,15 @@ public class EmployeePayrollService {
     }
 
     public static void main(String[] args) {
-        EmployeePayrollService service = new EmployeePayrollService();
+        EmployeePayrollService service = EmployeePayrollService.getInstance();
 
         // UC2 - Retrieve all
         System.out.println("=== All Employees ===");
         service.getEmployeePayrollData().forEach(System.out::println);
 
-        // UC3 - Update Terisa's salary
-        System.out.println("\n=== Updating Terisa's Salary ===");
-        EmployeePayrollData updated = service.updateEmployeeSalary("Terisa", 3000000.00);
+        // UC4 - Update using PreparedStatement
+        System.out.println("\n=== Updating Terisa's Salary (PreparedStatement) ===");
+        EmployeePayrollData updated = service.updateEmployeeSalaryPrepared("Terisa", 3000000.00);
         System.out.println("Updated: " + updated);
     }
 }
