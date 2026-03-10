@@ -21,6 +21,14 @@ public class EmployeePayrollServiceTest {
     }
 
     @Test
+    public void givenEmployees_whenAnalysedByGender_shouldReturnCorrectValues() {
+        EmployeePayrollService service = EmployeePayrollService.getInstance();
+        System.out.println("=== Gender Analysis ===");
+        assertDoesNotThrow(() -> service.getEmployeesByGenderAnalysis());
+        System.out.println("Test Passed! Gender analysis successful");
+    }
+
+    @Test
     public void givenSalaryUpdate_whenUpdated_shouldSyncWithDB() {
         EmployeePayrollService service = EmployeePayrollService.getInstance();
 

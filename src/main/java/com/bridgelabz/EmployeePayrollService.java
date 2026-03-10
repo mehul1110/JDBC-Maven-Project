@@ -135,13 +135,41 @@ public class EmployeePayrollService {
         return employeePayrollList;
     }
 
+    public void getEmployeesByGenderAnalysis() {
+        String sql = "SELECT gender, SUM(salary), AVG(salary), MIN(salary), MAX(salary), COUNT(gender) " +
+                "FROM employee_payroll GROUP BY gender";
+
+        try (Connection con = getConnection();
+             Statement stmt = con.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+
+            while (rs.next()) {
+                String gender = rs.getString("gender");
+                double sum = rs.getDouble("SUM(salary)");
+                double avg = rs.getDouble("AVG(salary)");
+                double min = rs.getDouble("MIN(salary)");
+                double max = rs.getDouble("MAX(salary)");
+                int count = rs.getInt("COUNT(gender)");
+
+                System.out.println("Gender: " + gender +
+                        " | SUM: " + sum +
+                        " | AVG: " + avg +
+                        " | MIN: " + min +
+                        " | MAX: " + max +
+                        " | COUNT: " + count);
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
     public static void main(String[] args) {
         EmployeePayrollService service = EmployeePayrollService.getInstance();
 
         // UC5 - Retrieve by date range
-        System.out.println("\n=== Employees joined between 2018-01-01 and 2019-12-31 ===");
-        List<EmployeePayrollData> empList = service.getEmployeesByDateRange(
-                LocalDate.of(2018, 1, 1), LocalDate.of(2019, 12, 31));
-        empList.forEach(System.out::println);
+        // UC6 - Gender analysis
+        System.out.println("\n=== Gender Analysis ===");
+        service.getEmployeesByGenderAnalysis();
     }
 }
