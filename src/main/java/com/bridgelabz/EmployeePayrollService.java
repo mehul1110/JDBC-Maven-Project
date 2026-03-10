@@ -8,7 +8,7 @@ import java.util.List;
 public class EmployeePayrollService {
 
     private static final String JDBC_URL =
-            "jdbc:mysql://localhost:3306/payroll_service?useSSL=false&allowPublicKeyRetrieval=true";;
+            "jdbc:mysql://localhost:3306/payroll_service?useSSL=false&allowPublicKeyRetrieval=true";
     private static final String USERNAME = "root";
     private static final String PASSWORD = "123456"; // change this
 
@@ -40,10 +40,54 @@ public class EmployeePayrollService {
         return employeePayrollList;
     }
 
+    public EmployeePayrollData updateEmployeeSalary(String name, double salary) {
+        String sql = String.format(
+                "UPDATE employee_payroll SET salary = %.2f WHERE name = '%s'", salary, name);
+
+        try (Connection con = getConnection();
+             Statement stmt = con.createStatement()) {
+
+            int rowsAffected = stmt.executeUpdate(sql);
+            if (rowsAffected > 0) {
+                System.out.println("Salary updated successfully for: " + name);
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return getEmployeePayrollDataByName(name);
+    }
+
+    public EmployeePayrollData getEmployeePayrollDataByName(String name) {
+        String sql = "SELECT * FROM employee_payroll WHERE name = '" + name + "'";
+
+        try (Connection con = getConnection();
+             Statement stmt = con.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+
+            if (rs.next()) {
+                int id = rs.getInt("id");
+                double salary = rs.getDouble("salary");
+                LocalDate startDate = rs.getDate("start").toLocalDate();
+                return new EmployeePayrollData(id, name, salary, startDate);
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
     public static void main(String[] args) {
         EmployeePayrollService service = new EmployeePayrollService();
-        List<EmployeePayrollData> employees = service.getEmployeePayrollData();
-        System.out.println("Employee Payroll Data: ");
-        employees.forEach(System.out::println);
+
+        // UC2 - Retrieve all
+        System.out.println("=== All Employees ===");
+        service.getEmployeePayrollData().forEach(System.out::println);
+
+        // UC3 - Update Terisa's salary
+        System.out.println("\n=== Updating Terisa's Salary ===");
+        EmployeePayrollData updated = service.updateEmployeeSalary("Terisa", 3000000.00);
+        System.out.println("Updated: " + updated);
     }
 }
